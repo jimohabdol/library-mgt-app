@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  frontend-db:
+    image: mongo:latest
+    volumes:
+      - frontend-data:/data/db
+    networks:
+      - library-net
+
+  admin-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: admin_db
+    volumes:
+      - admin-data:/var/lib/postgresql/data
+    networks:
+      - library-net
+
+  redis:
+    image: redis:latest
+    networks:
+      - library-net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URI: mongodb://frontend-db:27017/library
+    depends_on:
+      - frontend-db
+      - redis
+    networks:
+      - library-net
+
+  admin:
+    build: ./admin
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://admin:admin@admin-db:5432/admin_db
+    depends_on:
+      - admin-db
+      - redis
+    networks:
+      - library-net
+
+networks:
+  library-net:
+
+volumes:
+  frontend-data:
+  admin-data:
